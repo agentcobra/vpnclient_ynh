@@ -17,7 +17,30 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-source ./_helpers
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+#=================================================
+# LOAD SETTINGS
+#=================================================
+
+app=$YNH_APP_INSTANCE_NAME
+
+domain=$(ynh_app_setting_get $app domain)
+port=$(ynh_app_setting_get $app port)
+final_path=$(ynh_app_setting_get $app final_path)
+
+#=================================================
+# STANDARD REMOVE
+#=================================================
+# STOP AND REMOVE SERVICE
+#=================================================
 
 # Retrieve arguments
 domain=$(sudo yunohost app setting vpnclient domain)

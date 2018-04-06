@@ -17,6 +17,46 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#=================================================
+# GENERIC START
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+#=================================================
+# MANAGE SCRIPT FAILURE
+#=================================================
+
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
+
+#=================================================
+# RETRIEVE ARGUMENTS FROM THE MANIFEST
+#=================================================
+
+domain=$YNH_APP_ARG_DOMAIN
+path_url=$YNH_APP_ARG_PATH
+admin=$YNH_APP_ARG_ADMIN
+is_public=$YNH_APP_ARG_IS_PUBLIC
+language=$YNH_APP_ARG_LANGUAGE
+
+# This is a multi-instance app, meaning it can be installed several times independently
+# The id of the app as stated in the manifest is available as $YNH_APP_ID
+# The instance number is available as $YNH_APP_INSTANCE_NUMBER (equals "1", "2", ...)
+# The app instance name is available as $YNH_APP_INSTANCE_NAME
+#    - the first time the app is installed, YNH_APP_INSTANCE_NAME = ynhexample
+#    - the second time the app is installed, YNH_APP_INSTANCE_NAME = ynhexample__2
+#    - ynhexample__{N} for the subsequent installations, with N=3,4, ...
+# The app instance name is probably what you are interested the most, since this is
+# guaranteed to be unique. This is a good unique identifier to define installation path,
+# db names, ...
+app=$YNH_APP_INSTANCE_NAME
+
+
+
 # This is an upgrade?
 upgrade=$([ "${VPNCLIENT_UPGRADE}" == 1 ] && echo true || echo false)
 
@@ -24,12 +64,35 @@ upgrade=$([ "${VPNCLIENT_UPGRADE}" == 1 ] && echo true || echo false)
 domain=${1}
 url_path=${2}
 
-if ! $upgrade; then
-  source ./_helpers
-fi
+#=================================================
+# CHECK IF THE APP CAN BE INSTALLED WITH THESE ARGS
+#=================================================
 
-# Check domain/path availability
-ynh_webpath_register vpnclient $domain $url_path || ynh_die "problem on domain/path availability" 1
+# Normalize the url path syntax
+path_url=$(ynh_normalize_url_path $path_url)
+
+# Check web path availability
+ynh_webpath_available $domain $path_url || ynh_die "problem on domain/path availability" 1
+# Register (book) web path
+ynh_webpath_register $app $domain $path_url
+
+#=================================================
+# STORE SETTINGS FROM MANIFEST
+#=================================================
+
+ynh_app_setting_set $app domain $domain
+ynh_app_setting_set $app path $path_url
+ynh_app_setting_set $app admin $admin
+ynh_app_setting_set $app is_public $is_public
+ynh_app_setting_set $app language $language
+
+#=================================================
+# STANDARD MODIFICATIONS
+#=================================================
+
+#=================================================
+# INSTALL DEPENDENCIES
+#=================================================
 
 # Install packages
 packages='php5-fpm sipcalc dnsutils openvpn curl'
@@ -123,7 +186,11 @@ sudo systemctl stop openvpn
 sudo systemctl enable php5-fpm
 sudo systemctl restart php5-fpm
 
-sudo systemctl reload nginx
+#=================================================
+# RELOAD NGINX
+#=================================================
+
+systemctl reload nginx
 
 sudo systemctl enable ynh-vpnclient
 sudo yunohost service add ynh-vpnclient
