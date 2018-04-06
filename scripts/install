@@ -25,7 +25,7 @@ domain=${1}
 url_path=${2}
 
 if ! $upgrade; then
-  source ./helpers
+  source ./_helpers
 fi
 
 # Check domain/path availability

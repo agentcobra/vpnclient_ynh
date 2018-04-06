@@ -7,7 +7,7 @@ ynh_setting() {
   ynh_app_setting_get $app $setting
 }
 
-source ./helpers
+source ./_helpers
 
 domain=$(ynh_setting vpnclient domain)
 path=$(ynh_setting vpnclient path)
